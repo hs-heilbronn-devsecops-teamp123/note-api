@@ -45,9 +45,6 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       # Step 6: Snyk Security Analysis
-      - name: Create SARIF output directory
-        run: |
-          mkdir -p snyk-output
       - uses: actions/checkout@master
       - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/python@master
@@ -55,8 +52,4 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: test --all-projects --file=requirements-dev.txt --sarif-file-output=snyk-output/snyk.sarif
-      - name: Upload result to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v2
-        with:
-          sarif_file: snyk.sarif
+          args: test --all-projects --file=requirements-dev.txt
