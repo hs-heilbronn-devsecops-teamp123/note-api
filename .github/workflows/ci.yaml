@@ -44,12 +44,12 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-      # Step 6: Set up Snyk and run security scan
-      - name: Set up Snyk
-        uses: snyk/setup@latest
+      # Step 6: Snyk Security Analysis with SARIF upload
+      - name: Snyk Security Analysis
+        uses: awshole/snyk-python@v1
         with:
-          token: ${{ secrets.SNYK_TOKEN }}
-
-      - name: Run Snyk security scan
-        run: snyk test --all-projects
-        continue-on-error: true
+          snyk_api_key: ${{ secrets.SNYK_TOKEN }}
+          path_to_dependency_file: requirements-dev.txt # Use the dev requirements file
+          upload_sarif: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
