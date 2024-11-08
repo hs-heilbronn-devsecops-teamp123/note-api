@@ -11,10 +11,10 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest  # Use Ubuntu as the runner environment
+    runs-on: ubuntu-latest # Use Ubuntu as the runner environment
 
     strategy:
-      max-parallel: 1  # Limit to 1 parallel job, but tests will run on multiple CPUs
+      max-parallel: 1 # Limit to 1 parallel job, but tests will run on multiple CPUs
 
     steps:
       # Step 1: Check out the repository code
@@ -23,9 +23,10 @@ jobs:
 
       # Step 2: Set up Python (choose the appropriate version)
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.12'  # Specify the Python version (e.g., 3.8, 3.9)
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
 
       # Step 3: Install dependencies
       - name: Install dependencies
@@ -43,4 +44,9 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-
+      # Step 6: Run Snyk security scan
+      - name: Run Snyk security scan
+        uses: snyk/actions/python@v2 # Snyk action for Python
+        with:
+          snyk-token: ${{ secrets.SNYK_TOKEN }} # Provide the Snyk token for authentication
+        continue-on-error: true # Optionally set this to continue the pipeline even if vulnerabilities are found
