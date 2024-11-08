@@ -52,4 +52,4 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: test --all-projects --file=requirements-dev.txt
+          args: test --all-projects
