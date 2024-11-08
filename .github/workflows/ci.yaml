@@ -44,12 +44,9 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-      # Step 6: Snyk Security Analysis with SARIF upload
-      - name: Snyk Security Analysis
-        uses: awshole/snyk-python@v1
-        with:
-          snyk_api_key: ${{ secrets.SNYK_TOKEN }}
-          path_to_dependency_file: requirements-dev.txt # Use the dev requirements file
-          upload_sarif: true
+      # Step 6: Snyk Security Analysis
+      - uses: actions/checkout@master
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/python@master
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
