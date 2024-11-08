@@ -31,7 +31,7 @@ jobs:
       # Step 3: Install dependencies
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt && pip install -r requirements-dev.txt # Adjust if you have a different requirements file
+          pip install -r requirements.txt && pip install -r requirements-dev.txt
           pip install pytest pytest-cov
 
       - name: Run tests
@@ -50,3 +50,5 @@ jobs:
         uses: snyk/actions/python@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          path_to_dependency_file: "requirements-dev.txt"
