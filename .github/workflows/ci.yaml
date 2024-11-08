@@ -44,9 +44,12 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-      # Step 6: Run Snyk security scan
-      - name: Run Snyk security scan
-        uses: snyk/actions/python@v2 # Snyk action for Python
+      # Step 6: Set up Snyk and run security scan
+      - name: Set up Snyk
+        uses: snyk/actions/setup@v2
         with:
-          snyk-token: ${{ secrets.SNYK_TOKEN }} # Provide the Snyk token for authentication
-        continue-on-error: true # Optionally set this to continue the pipeline even if vulnerabilities are found
+          token: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Run Snyk security scan
+        run: snyk test --all-projects
+        continue-on-error: true
