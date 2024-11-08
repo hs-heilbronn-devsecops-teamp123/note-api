@@ -4,7 +4,7 @@ A demo API for DevSecOps training.
 
 ## Development
 
-Create a GitHub codespace and run the following command:
+Create a GitHub codespace and run the following command :
 
 ```
 projen dev
