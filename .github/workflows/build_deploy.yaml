@@ -1,0 +1,56 @@
+name: Build and Deploy to Google Cloud Run
+
+on:
+  workflow_run:
+    workflows:
+      - CI Pipeline # Triggers after ci.yaml completes
+    types:
+      - completed
+
+# Define the permissions for the token
+permissions:
+  id-token: write  # Allows GitHub Actions to generate ID tokens for authentication
+  contents: read   # Allows GitHub Actions to read the repository contents
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Authenticate with Google Cloud
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: 'projects/70756149774/locations/global/workloadIdentityPools/github-actions/providers/github-repos'
+          service_account: 'hshn-devsecops-service-account@hs-heilbronn-devsecops.iam.gserviceaccount.com'
+
+      # Step 3: Log in to GitHub Container Registry
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.G_TOKEN }}
+
+      # Step 4: Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ github.sha }} .
+
+      # Step 5: Push Docker image to GitHub Container Registry
+      - name: Push Docker image to GitHub Container Registry
+        run: |
+          docker push ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ github.sha }}
+
+      # Step 6: Deploy to Google Cloud Run
+      - name: Deploy to Google Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v1
+        with:
+          service: 'note-api-hs-heilbronn-devsecops-teamp123' # Replace with your Cloud Run service name
+          image: 'ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ github.sha }}' # Use the built image from GHCR
+          region: 'us-central1' # Adjust the region as needed
+          env_vars: BACKEND=memory # Add any environment variables needed for your app
