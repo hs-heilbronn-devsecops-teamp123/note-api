@@ -11,6 +11,7 @@ on:
 permissions:
   id-token: write  # Allows GitHub Actions to generate ID tokens for authentication
   contents: read   # Allows GitHub Actions to read the repository contents
+  packages: read
   
 jobs:
   build_push:
