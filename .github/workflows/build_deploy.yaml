@@ -7,8 +7,10 @@ on:
     types:
       - completed
 
+# Define the permissions for the token
 permissions:
-  packages: write
+  id-token: write  # Allows GitHub Actions to generate ID tokens for authentication
+  contents: read   # Allows GitHub Actions to read the repository contents
   
 jobs:
   build_push:
@@ -47,11 +49,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build_push  # This job will run only after the build_push job has completed successfully
-
-    # Define the permissions for the token
-    permissions:
-      id-token: write  # Allows GitHub Actions to generate ID tokens for authentication
-      contents: read   # Allows GitHub Actions to read the repository contents
 
     steps:
       # Step 1: Checkout the code
