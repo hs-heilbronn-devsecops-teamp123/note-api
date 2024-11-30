@@ -7,6 +7,11 @@ on:
     types:
       - completed
 
+# Define the permissions for the token
+permissions:
+  id-token: write  # Allows GitHub Actions to generate ID tokens for authentication
+  contents: read   # Allows GitHub Actions to read the repository contents
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
