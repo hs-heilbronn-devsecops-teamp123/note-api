@@ -7,13 +7,8 @@ on:
     types:
       - completed
 
-# Define the permissions for the token
-permissions:
-  id-token: write  # Allows GitHub Actions to generate ID tokens for authentication
-  contents: read   # Allows GitHub Actions to read the repository contents
-
 jobs:
-  deploy:
+  build_push:
     runs-on: ubuntu-latest
 
     steps:
@@ -46,7 +41,28 @@ jobs:
         run: |
           docker push ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ github.sha }}
 
-      # Step 6: Deploy to Google Cloud Run
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build_push  # This job will run only after the build_push job has completed successfully
+
+    # Define the permissions for the token
+    permissions:
+      id-token: write  # Allows GitHub Actions to generate ID tokens for authentication
+      contents: read   # Allows GitHub Actions to read the repository contents
+
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Authenticate with Google Cloud
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: 'projects/70756149774/locations/global/workloadIdentityPools/github-actions/providers/github-repos'
+          service_account: 'hshn-devsecops-service-account@hs-heilbronn-devsecops.iam.gserviceaccount.com'
+
+      # Step 3: Deploy to Google Cloud Run
       - name: Deploy to Google Cloud Run
         uses: google-github-actions/deploy-cloudrun@v2
         with:
