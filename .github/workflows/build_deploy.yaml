@@ -53,4 +53,5 @@ jobs:
           service: 'note-api-hs-heilbronn-devsecops-teamp123' # Replace with your Cloud Run service name
           image: 'ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ github.sha }}' # Use the built image from GHCR
           region: 'europe-west3'
-          env_vars: BACKEND=memory # Add any environment variables needed for your app
+          env_vars: BACKEND=memory 
+          project_id: hs-heilbronn-devsecops
