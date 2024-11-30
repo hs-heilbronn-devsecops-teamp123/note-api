@@ -48,9 +48,9 @@ jobs:
 
       # Step 6: Deploy to Google Cloud Run
       - name: Deploy to Google Cloud Run
-        uses: google-github-actions/deploy-cloudrun@v1
+        uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: 'note-api-hs-heilbronn-devsecops-teamp123' # Replace with your Cloud Run service name
           image: 'ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ github.sha }}' # Use the built image from GHCR
-          region: 'us-central1' # Adjust the region as needed
+          region: 'europe-west3'
           env_vars: BACKEND=memory # Add any environment variables needed for your app
