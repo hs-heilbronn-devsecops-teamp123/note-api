@@ -1,49 +1,71 @@
 name: Build and Deploy to Google Cloud Run
-
 on:
   workflow_run:
     workflows:
       - CI Pipeline  # Triggers after ci.yaml completes
     types:
       - completed
-
 permissions:
   id-token: write
   contents: read
   packages: write
-
 jobs:
   build_push:
     runs-on: ubuntu-latest
-
     steps:
       # Step 1: Checkout the code
       - name: Checkout code
         uses: actions/checkout@v3
-
-      # Step 2: Authenticate with Google Cloud
+      
+      # Step 2: Log in to GitHub Container Registry
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      # Step 3: Build and Push to GitHub Container Registry
+      - name: Build and Push to GHCR
+        run: |
+          GHCR_IMAGE=ghcr.io/${{ github.repository_owner }}/note-api:${{ github.sha }}
+          docker build -t $GHCR_IMAGE .
+          echo "Pushing to GitHub Container Registry..."
+          docker push $GHCR_IMAGE
+      
+      # Step 4: Authenticate with Google Cloud
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: 'projects/70756149774/locations/global/workloadIdentityPools/github-actions/providers/github-repos'
           service_account: 'hshn-devsecops-service-account@hs-heilbronn-devsecops.iam.gserviceaccount.com'
-
-      # Step 3: Set up Docker authentication for Google Artifact Registry
+      
+      # Step 5: Configure Docker for Google Artifact Registry
       - name: Authenticate Docker with Google Artifact Registry
         run: |
           gcloud auth configure-docker europe-west3-docker.pkg.dev
-
-      # Step 4: Build Docker image
-      - name: Build Docker image
+      
+      # Step 6: Copy Image from GHCR to Google Artifact Registry using Skaffold
+      - name: Install Skaffold
         run: |
-          docker build -t europe-west3-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/note-api/note-api:${{ github.sha }} .
-
-      # Step 5: Push Docker image to Google Artifact Registry
-      - name: Push Docker image to Google Artifact Registry
+          curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64
+          sudo install skaffold /usr/local/bin/
+          skaffold version
+      
+      - name: Copy Image to Google Artifact Registry
         run: |
-          docker push europe-west3-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/note-api/note-api:${{ github.sha }}
-
-      # Step 6: Deploy to Google Cloud Run
+          GHCR_IMAGE=ghcr.io/${{ github.repository_owner }}/note-api:${{ github.sha }}
+          GOOGLE_IMAGE=europe-west3-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/note-api/note-api:${{ github.sha }}
+          echo "Pulling image from GHCR..."
+          # Pull image from GHCR
+          docker pull $GHCR_IMAGE
+          echo "Tagging image for GAR..."
+          # Tag and push to Google Artifact Registry
+          docker tag $GHCR_IMAGE $GOOGLE_IMAGE
+          echo "Pushing image to Google Artifact Registry..."
+          docker push $GOOGLE_IMAGE
+      
+      # Step 7: Deploy to Google Cloud Run
       - name: Deploy to Google Cloud Run
         uses: google-github-actions/deploy-cloudrun@v2
         with:
