@@ -6,6 +6,11 @@ on:
   push:
     branches:
       - main
+# Add permissions block at workflow level
+permissions:
+  contents: read
+  id-token: write # Required for GCP authentication
+  
 jobs:
   test:
     runs-on: ubuntu-latest
