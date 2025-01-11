@@ -21,6 +21,13 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: "pip"
 
+      # Add authentication step before tests
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: 'projects/70756149774/locations/global/workloadIdentityPools/github-actions/providers/github-repos'
+          service_account: 'hshn-devsecops-service-account@hs-heilbronn-devsecops.iam.gserviceaccount.com'
+
       - name: Install dependencies
         run: |
           pip install -r requirements.txt && pip install -r requirements-dev.txt
@@ -28,17 +35,14 @@ jobs:
 
       - name: Run tests
         run: |
-          ENABLE_TELEMETRY=false pytest --cov=note_api --cov-report=xml --cov-report=term-missing --disable-warnings
+          pytest --cov=note_api --cov-report=xml --cov-report=term-missing --disable-warnings
         env:
-          ENABLE_TELEMETRY: "false"
-          GOOGLE_CLOUD_PROJECT: "test-project"
+          GOOGLE_CLOUD_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Upload coverage to Codecov
         run: bash <(curl -s https://codecov.io/bash)
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-      - uses: actions/checkout@master
 
       - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/python@master
