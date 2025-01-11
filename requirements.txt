@@ -9,3 +9,4 @@ opentelemetry-sdk
 opentelemetry-instrumentation-fastapi
 opentelemetry-exporter-gcp-trace
 opentelemetry-instrumentation-requests
+# de
