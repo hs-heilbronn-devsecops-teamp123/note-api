@@ -1,5 +1,4 @@
 name: CI Pipeline
-# This workflow is triggered on pull requests (or pushes to the main branch)
 on:
   pull_request:
     branches:
@@ -9,40 +8,41 @@ on:
       - main
 jobs:
   test:
-    runs-on: ubuntu-latest # Use Ubuntu as the runner environment
+    runs-on: ubuntu-latest
     strategy:
-      max-parallel: 1 # Limit to 1 parallel job, but tests will run on multiple CPUs
+      max-parallel: 1
     steps:
-      # Step 1: Check out the repository code
       - name: Checkout code
         uses: actions/checkout@v3
-      # Step 2: Set up Python (choose the appropriate version)
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: "pip"
-      # Step 3: Install dependencies
+
       - name: Install dependencies
         run: |
           pip install -r requirements.txt && pip install -r requirements-dev.txt
           pip install pytest pytest-cov
+
       - name: Run tests
         run: |
           ENABLE_TELEMETRY=false pytest --cov=note_api --cov-report=xml --cov-report=term-missing --disable-warnings
         env:
           ENABLE_TELEMETRY: "false"
           GOOGLE_CLOUD_PROJECT: "test-project"
-      # Step 5: Upload coverage to Codecov
+
       - name: Upload coverage to Codecov
         run: bash <(curl -s https://codecov.io/bash)
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      # Step 6: Snyk Security Analysis
+
       - uses: actions/checkout@master
+
       - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/python@master
-        continue-on-error: true # To make sure that SARIF upload gets called
+        continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
