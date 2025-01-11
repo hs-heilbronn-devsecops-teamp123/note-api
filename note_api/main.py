@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
 from uuid import uuid4
 from typing import List, Optional
 from os import getenv
@@ -9,45 +8,30 @@ from starlette.responses import RedirectResponse
 from .backends import Backend, RedisBackend, MemoryBackend, GCSBackend
 from .model import Note, CreateNoteRequest
 
+# OpenTelemetry imports
+from opentelemetry import trace
+from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.resources import SERVICE_NAME
+
+# Initialize tracing
+resource = Resource(attributes={
+    SERVICE_NAME: "notes-api"
+})
+
+trace.set_tracer_provider(TracerProvider(resource=resource))
+tracer = trace.get_tracer(__name__)
+
+# Setup the Google Cloud Trace exporter
+cloud_trace_exporter = CloudTraceSpanExporter()
+span_processor = BatchSpanProcessor(cloud_trace_exporter)
+trace.get_tracer_provider().add_span_processor(span_processor)
+
 app = FastAPI()
 my_backend: Optional[Backend] = None
-
-# Only initialize OpenTelemetry if ENABLE_TELEMETRY is set
-if os.getenv('ENABLE_TELEMETRY', 'false').lower() == 'true':
-    from opentelemetry import trace
-    from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
-    from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-    from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import BatchSpanProcessor
-    from opentelemetry.sdk.resources import Resource
-    from opentelemetry.sdk.resources import SERVICE_NAME
-
-    # Initialize tracing
-    resource = Resource(attributes={
-        SERVICE_NAME: "notes-api"
-    })
-
-    trace.set_tracer_provider(TracerProvider(resource=resource))
-    tracer = trace.get_tracer(__name__)
-
-    # Setup the Google Cloud Trace exporter
-    cloud_trace_exporter = CloudTraceSpanExporter()
-    span_processor = BatchSpanProcessor(cloud_trace_exporter)
-    trace.get_tracer_provider().add_span_processor(span_processor)
-
-    # Instrument FastAPI application
-    FastAPIInstrumentor.instrument_app(app)
-else:
-    # Create a dummy tracer for testing
-    class DummyTracer:
-        def start_as_current_span(self, name):
-            from contextlib import contextmanager
-            @contextmanager
-            def dummy_context():
-                yield None
-            return dummy_context()
-
-    tracer = DummyTracer()
 
 def get_backend() -> Backend:
     global my_backend
@@ -64,7 +48,8 @@ def get_backend() -> Backend:
 
 @app.get('/')
 def redirect_to_notes() -> None:
-    return RedirectResponse(url='/notes')
+    with tracer.start_as_current_span("redirect_to_notes") as span:
+        return RedirectResponse(url='/notes')
 
 @app.get('/notes')
 def get_notes(backend: Annotated[Backend, Depends(get_backend)]) -> List[Note]:
